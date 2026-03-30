@@ -123,3 +123,5 @@ tat redteam run --config tests/redteam/configs/config_rt03.yaml
 - Red-team suite includes 20 deterministic security cases.
 - This repository is public-facing and designed to allow referenced inspiration patterns with explicit attribution.
 - Pytest disables its built-in `debugging` plugin by default because that plugin can crash under some Python 3.13 environments; for local troubleshooting, re-enable it explicitly with `pytest -p debugging`.
+
+test commit
