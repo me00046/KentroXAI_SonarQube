@@ -1,0 +1,321 @@
+"""Model invocation helpers for live simulation runs."""
+
+from __future__ import annotations
+
+import json
+import os
+from dataclasses import dataclass
+from typing import Any
+from urllib import error, request
+
+from trusted_ai_toolkit.schemas import ToolkitConfig
+
+
+class ModelInvocationError(RuntimeError):
+    """Raised when a configured model provider cannot be invoked."""
+
+
+@dataclass(slots=True)
+class ModelInvocationResult:
+    """Normalized model invocation result used by the toolkit pipeline."""
+
+    provider: str
+    model: str
+    route: str
+    output_text: str
+    request_payload: dict[str, Any]
+    response_payload: dict[str, Any]
+    request_url: str
+
+
+@dataclass(slots=True)
+class EmbeddingInvocationResult:
+    """Normalized embedding invocation result used by empirical metrics."""
+
+    provider: str
+    model: str
+    route: str
+    embeddings: list[list[float]]
+    request_payload: dict[str, Any]
+    response_payload: dict[str, Any]
+    request_url: str
+
+
+def _resolve_endpoint(config: ToolkitConfig) -> str:
+    if config.adapters.provider == "ollama":
+        return (config.adapters.endpoint or "http://localhost:11434").rstrip("/")
+
+    endpoint = config.adapters.endpoint
+    if not endpoint:
+        raise ModelInvocationError("adapters.endpoint must be configured for live simulation runs")
+    return endpoint.rstrip("/")
+
+
+def _resolve_model_name(config: ToolkitConfig) -> str:
+    if config.adapters.model:
+        return config.adapters.model
+
+    if config.adapters.provider == "ollama":
+        return "qwen2.5-coder:3b"
+
+    model_name = config.system.model_name if config.system else None
+    if not model_name:
+        raise ModelInvocationError("adapters.model or system.model_name must be configured for live simulation runs")
+    return model_name
+
+
+def resolve_embedding_model_name(config: ToolkitConfig) -> str:
+    """Resolve the embedding model name for the configured provider.
+
+    Generation and embedding models should be configured separately. Reusing a
+    chat model for embeddings is both expensive and, for OpenAI, often
+    incorrect. This helper keeps the provider-specific default in one place.
+    """
+
+    if config.adapters.embedding_model:
+        return config.adapters.embedding_model
+    if config.adapters.provider == "ollama":
+        return "nomic-embed-text"
+    return "text-embedding-3-small"
+
+
+def _resolve_route(config: ToolkitConfig, endpoint: str) -> tuple[str, str]:
+    route = config.adapters.request_format
+    provider = config.adapters.provider
+
+    if route == "auto":
+        if provider == "ollama":
+            route = "ollama_generate"
+        elif endpoint.endswith("/chat/completions"):
+            route = "chat_completions"
+        elif endpoint.endswith("/responses"):
+            route = "responses"
+        else:
+            route = "responses"
+
+    if route == "responses":
+        url = endpoint if endpoint.endswith("/responses") else f"{endpoint}/responses"
+    elif route == "chat_completions":
+        url = endpoint if endpoint.endswith("/chat/completions") else f"{endpoint}/chat/completions"
+    elif route == "ollama_generate":
+        url = endpoint if endpoint.endswith("/api/generate") else f"{endpoint}/api/generate"
+    else:
+        raise ModelInvocationError(f"unsupported request format: {route}")
+
+    return route, url
+
+
+def _authorization_headers(config: ToolkitConfig) -> dict[str, str]:
+    if config.adapters.provider == "ollama":
+        return {}
+
+    api_key = os.getenv(config.adapters.api_key_env)
+    if not api_key:
+        raise ModelInvocationError(
+            f"environment variable {config.adapters.api_key_env} must be set for live simulation runs"
+        )
+    return {"Authorization": f"Bearer {api_key}"}
+
+
+def _build_request_payload(prompt: str, model_name: str, route: str) -> dict[str, Any]:
+    if route == "responses":
+        return {"model": model_name, "input": prompt}
+    if route == "chat_completions":
+        return {
+            "model": model_name,
+            "messages": [
+                {"role": "user", "content": prompt},
+            ],
+        }
+    if route == "ollama_generate":
+        return {"model": model_name, "prompt": prompt, "stream": False}
+    raise ModelInvocationError(f"unsupported request format: {route}")
+
+
+def _extract_responses_text(payload: dict[str, Any]) -> str:
+    output_text = payload.get("output_text")
+    if isinstance(output_text, str) and output_text.strip():
+        return output_text.strip()
+
+    output = payload.get("output")
+    if isinstance(output, list):
+        chunks: list[str] = []
+        for item in output:
+            if not isinstance(item, dict):
+                continue
+            content = item.get("content")
+            if not isinstance(content, list):
+                continue
+            for part in content:
+                if not isinstance(part, dict):
+                    continue
+                text = part.get("text")
+                if isinstance(text, str) and text:
+                    chunks.append(text)
+        if chunks:
+            return "\n".join(chunks).strip()
+
+    raise ModelInvocationError("provider response did not contain a usable text output")
+
+
+def _extract_chat_completions_text(payload: dict[str, Any]) -> str:
+    choices = payload.get("choices")
+    if not isinstance(choices, list) or not choices:
+        raise ModelInvocationError("chat completions response did not include choices")
+
+    message = choices[0].get("message", {})
+    if not isinstance(message, dict):
+        raise ModelInvocationError("chat completions response did not include a valid message")
+
+    content = message.get("content")
+    if isinstance(content, str) and content.strip():
+        return content.strip()
+
+    if isinstance(content, list):
+        chunks: list[str] = []
+        for item in content:
+            if isinstance(item, dict):
+                text = item.get("text")
+                if isinstance(text, str) and text:
+                    chunks.append(text)
+        if chunks:
+            return "\n".join(chunks).strip()
+
+    raise ModelInvocationError("chat completions response did not contain usable content")
+
+
+def _extract_ollama_text(payload: dict[str, Any]) -> str:
+    response_text = payload.get("response")
+    if isinstance(response_text, str) and response_text.strip():
+        return response_text.strip()
+    raise ModelInvocationError("ollama response did not contain usable content")
+
+
+def _extract_output_text(payload: dict[str, Any], route: str) -> str:
+    if route == "responses":
+        return _extract_responses_text(payload)
+    if route == "chat_completions":
+        return _extract_chat_completions_text(payload)
+    if route == "ollama_generate":
+        return _extract_ollama_text(payload)
+    raise ModelInvocationError(f"unsupported request format: {route}")
+
+
+def _extract_embeddings(payload: dict[str, Any]) -> list[list[float]]:
+    embeddings = payload.get("embeddings")
+    if isinstance(embeddings, list) and embeddings and all(isinstance(item, list) for item in embeddings):
+        return embeddings
+
+    single = payload.get("embedding")
+    if isinstance(single, list) and single and all(isinstance(item, (int, float)) for item in single):
+        return [[float(item) for item in single]]
+
+    raise ModelInvocationError("embedding response did not contain usable vectors")
+
+
+def invoke_model(prompt: str, config: ToolkitConfig) -> ModelInvocationResult:
+    """Invoke the configured live model provider and normalize the response."""
+
+    provider = config.adapters.provider
+    if provider not in {"openai_compatible", "azure_openai", "ollama"}:
+        raise ModelInvocationError(f"live simulation is not supported for provider: {provider}")
+
+    endpoint = _resolve_endpoint(config)
+    model_name = _resolve_model_name(config)
+    # Normalize the configured provider into one concrete HTTP route so the
+    # rest of the pipeline can stay provider-agnostic.
+    route, url = _resolve_route(config, endpoint)
+    request_payload = _build_request_payload(prompt, model_name, route)
+
+    headers = {
+        "Content-Type": "application/json",
+        **_authorization_headers(config),
+    }
+    req = request.Request(
+        url,
+        data=json.dumps(request_payload).encode("utf-8"),
+        headers=headers,
+        method="POST",
+    )
+
+    try:
+        with request.urlopen(req, timeout=config.adapters.timeout_seconds) as response:
+            raw_body = response.read().decode("utf-8")
+    except error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        raise ModelInvocationError(f"provider returned HTTP {exc.code}: {body}") from exc
+    except error.URLError as exc:
+        raise ModelInvocationError(f"provider request failed: {exc.reason}") from exc
+
+    try:
+        response_payload = json.loads(raw_body)
+    except json.JSONDecodeError as exc:
+        raise ModelInvocationError("provider response was not valid JSON") from exc
+    if not isinstance(response_payload, dict):
+        raise ModelInvocationError("provider response must be a JSON object")
+
+    return ModelInvocationResult(
+        provider=provider,
+        model=model_name,
+        route=route,
+        output_text=_extract_output_text(response_payload, route),
+        request_payload=request_payload,
+        response_payload=response_payload,
+        request_url=url,
+    )
+
+
+def embed_texts(texts: list[str], config: ToolkitConfig, model_name: str | None = None) -> EmbeddingInvocationResult:
+    """Invoke the configured provider for embeddings if supported."""
+
+    provider = config.adapters.provider
+    if provider not in {"ollama", "openai_compatible", "azure_openai"}:
+        raise ModelInvocationError(f"embeddings are not supported for provider: {provider}")
+
+    endpoint = _resolve_endpoint(config)
+    # Embedding model selection is kept separate from generation model
+    # selection so OpenAI and Ollama runs can use the correct model family for
+    # semantic scoring.
+    resolved_model = model_name or resolve_embedding_model_name(config)
+    if provider == "ollama":
+        url = endpoint if endpoint.endswith("/api/embed") else f"{endpoint}/api/embed"
+        payload = {"model": resolved_model, "input": texts}
+    else:
+        url = endpoint if endpoint.endswith("/embeddings") else f"{endpoint}/embeddings"
+        payload = {"model": resolved_model, "input": texts}
+
+    headers = {
+        "Content-Type": "application/json",
+        **_authorization_headers(config),
+    }
+    req = request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers=headers,
+        method="POST",
+    )
+    try:
+        with request.urlopen(req, timeout=config.adapters.timeout_seconds) as response:
+            raw_body = response.read().decode("utf-8")
+    except error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        raise ModelInvocationError(f"provider returned HTTP {exc.code}: {body}") from exc
+    except error.URLError as exc:
+        raise ModelInvocationError(f"provider request failed: {exc.reason}") from exc
+
+    try:
+        response_payload = json.loads(raw_body)
+    except json.JSONDecodeError as exc:
+        raise ModelInvocationError("embedding response was not valid JSON") from exc
+    if not isinstance(response_payload, dict):
+        raise ModelInvocationError("embedding response must be a JSON object")
+
+    return EmbeddingInvocationResult(
+        provider=provider,
+        model=resolved_model,
+        route="embeddings",
+        embeddings=_extract_embeddings(response_payload),
+        request_payload=payload,
+        response_payload=response_payload,
+        request_url=url,
+    )

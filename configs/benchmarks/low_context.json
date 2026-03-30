@@ -1,0 +1,34 @@
+{
+  "prompt": "Summarize the low-risk governance controls in plain language.",
+  "retrieved_contexts": [
+    {
+      "id": "ctx-low-01",
+      "title": "Low Risk Review Note",
+      "snippet": "Low-risk releases require baseline evaluation, documented ownership, and evidence retention.",
+      "content": "Low-risk review notes require a baseline evaluation run, named owner, and artifact retention before release approval.",
+      "uri": "file://policies/low_risk_review_note.md",
+      "used_for": "baseline release guidance"
+    },
+    {
+      "id": "ctx-low-02",
+      "title": "Support Workflow Standard",
+      "snippet": "Support workflows require escalation contacts and issue logging for traceability.",
+      "content": "Support workflow standards require escalation contacts, issue logging, and a documented rollback contact for low-risk systems.",
+      "uri": "file://standards/support_workflow_standard.md",
+      "used_for": "operational traceability"
+    }
+  ],
+  "fairness_dataset": {
+    "privileged_labels": [1, 1, 0, 1, 1, 0],
+    "unprivileged_labels": [1, 0, 0, 1, 1, 0],
+    "privileged_true": [1, 1, 0, 1, 1, 0],
+    "privileged_pred": [1, 1, 0, 1, 1, 0],
+    "unprivileged_true": [1, 0, 0, 1, 1, 0],
+    "unprivileged_pred": [1, 0, 0, 1, 0, 0]
+  },
+  "labeled_evaluation": {
+    "dataset_name": "low_risk_labeled_eval",
+    "labels": [1, 1, 0, 1, 0, 1],
+    "predictions": [1, 1, 0, 1, 0, 1]
+  }
+}

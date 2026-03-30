@@ -1,0 +1,117 @@
+# Answer Trust Card
+
+{% set display_risk_tier = deployment_risk_tier or risk_tier %}
+
+**Project:** {{ project_name }}  
+**Run ID:** {{ run_id }}  
+**Deployment Risk:** {{ display_risk_tier | title }}  
+**Control-Derived Tier:** {{ risk_tier }}  
+**Answer Verdict:** {{ answer_verdict | replace("_", " ") | title if answer_verdict else "Unknown" }}  
+**Answer Trust Score:** {{ answer_trust_score_pct if answer_trust_score_pct is not none else "N/A" }}%  
+**Overall Status:** {{ overall_status | replace("_", " ") | title }}  
+**Go/No-Go:** {{ go_no_go | upper }}
+
+## Executive Summary
+
+{{ executive_summary }}
+
+## Answer Truth Summary
+
+- Claim support rate: {{ answer_truth_summary.claim_support_rate if answer_truth_summary.claim_support_rate is not none else "N/A" }}
+- Unsupported claim rate: {{ answer_truth_summary.unsupported_claim_rate if answer_truth_summary.unsupported_claim_rate is not none else "N/A" }}
+- Contradiction rate: {{ answer_truth_summary.contradiction_rate if answer_truth_summary.contradiction_rate is not none else "N/A" }}
+- Evidence sufficiency score: {{ answer_truth_summary.evidence_sufficiency_score if answer_truth_summary.evidence_sufficiency_score is not none else "N/A" }}
+- Bias risk: {{ bias_assessment.risk | title if bias_assessment.risk else "Unknown" }}
+
+## Why This Verdict
+
+{% for reason in answer_reasons %}
+- {{ reason }}
+{% endfor %}
+
+## Stage Gate Status
+
+| Stage Gate | Status |
+|---|---|
+{% for gate, status in stage_gate_status.items() %}| {{ gate }} | {{ status }} |
+{% endfor %}
+
+## Evidence Pack Completeness
+
+- Completeness: {{ evidence_completeness }}%
+- Required Outputs: {{ required_outputs | length }}
+
+## Trust Math
+
+{% if pillar_scores %}
+- Trust z-score: {{ trust_score }}
+- Answer trust score: {{ answer_trust_score_pct }}%
+- Empirical quality score: {{ empirical_score_pct }}%
+- Governance score (pre-penalty): {{ raw_trust_score_pct }}%
+- Release readiness (after penalties): {{ release_readiness_score_pct }}%
+- Security: {{ "%.0f"|format(pillar_scores.security * 100) }}%
+- Reliability: {{ "%.0f"|format(pillar_scores.reliability * 100) }}%
+- Transparency: {{ "%.0f"|format(pillar_scores.transparency * 100) }}%
+- Governance: {{ "%.0f"|format(pillar_scores.governance * 100) }}%
+{% else %}
+- Not available
+{% endif %}
+
+## Weighting Rationale
+
+{% for pillar, weight in weighting_rationale.items() %}
+- {{ pillar }} weight: {{ "%.0f"|format(weight * 100) }}%
+{% endfor %}
+
+## Responsible AI Dimension Status
+
+| Dimension | Status |
+|---|---|
+| Fairness | {{ rai_dimensions.fairness }} |
+| Reliability and Safety | {{ rai_dimensions.reliability_and_safety }} |
+| Privacy and Security | {{ rai_dimensions.privacy_and_security }} |
+| Transparency | {{ rai_dimensions.transparency }} |
+| Accountability | {{ rai_dimensions.accountability }} |
+| Inclusiveness | {{ rai_dimensions.inclusiveness }} |
+
+## Fairness Snapshot (AIF360-Inspired)
+
+- Statistical Parity Difference target: `abs(SPD) <= threshold`
+- Disparate Impact Ratio target: `DIR >= 0.8` (80% rule heuristic)
+- Equal Opportunity Difference target: `abs(EOD) <= threshold`
+- Average Odds Difference target: `abs(AOD) <= threshold`
+- Reference: https://github.com/Trusted-AI/AIF360
+
+## Metrics Table
+
+| Metric | Value | Threshold | Pass |
+|---|---:|---:|:---:|
+{% for m in metric_results %}| {{ m.metric_id }} | {{ m.value }} | {{ m.threshold }} | {{ m.passed }} |
+{% endfor %}
+
+## Red Team Summary
+
+- Severity Threshold: {{ severity_threshold }}
+- Low: {{ redteam_summary.low }}
+- Medium: {{ redteam_summary.medium }}
+- High: {{ redteam_summary.high }}
+- Critical: {{ redteam_summary.critical }}
+
+## Governance Control Checklist
+
+| Control | Status |
+|---|---|
+{% for item in control_checks %}| {{ item.control }} | {{ item.status }} |
+{% endfor %}
+
+## Required Actions and Next Steps
+
+{% for action in required_actions %}
+- {{ action }}
+{% endfor %}
+
+## Artifact Links
+
+{% for name, path in artifact_links.items() %}
+- {{ name }}: `{{ path }}`
+{% endfor %}

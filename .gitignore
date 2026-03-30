@@ -1,0 +1,22 @@
+# Generated run outputs
+artifacts/
+demo_outputs/
+
+# Python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Build/package metadata
+*.egg-info/
+
+# macOS/Office temp files
+.DS_Store
+~$*.docx
+.venv/
+
+# Local secrets
+.env
+.env.local
+.env.*
+!.env.example

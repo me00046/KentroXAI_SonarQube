@@ -1,0 +1,125 @@
+# Trusted AI Toolkit
+
+A lightweight, offline-first Trusted AI governance toolkit aligned to four workstreams:
+
+- Workstream A: Explainability and Reasoning Report
+- Workstream B: Evaluation and Evidence Pipeline
+- Workstream C: Security/Red Teaming, Monitoring, and Incident Response
+- Workstream D: Documentation Templates and Artifact Repository Structure
+
+## Inspiration and References
+
+- AIF360 (fairness and bias evaluation patterns): https://github.com/Trusted-AI/AIF360
+
+See `DESIGN_NOTES.md` for how this repository maps inspiration patterns into local modules, and `ATTRIBUTION.md` for public reuse guidance.
+See [Calculation Methods](docs/calculations/CALCULATION_METHODS.md) for a plain-English explanation of the current formulas, thresholds, and known limitations behind scorecard decisions.
+See [Trust Metrics Specification](docs/architecture/TRUST_METRICS_SPEC.md) for the current trust-score and stage-gate contract.
+See [Scorecard Data Backing](docs/architecture/SCORECARD_DATA_BACKING.md) for what scorecard values are directly backed versus proxy-backed.
+
+Current AIF360-inspired implementations:
+- Statistical Parity Difference (SPD) fairness metric
+- Disparate Impact Ratio (DIR) fairness metric
+- Equal Opportunity Difference (EOD) fairness metric
+- Average Odds Difference (AOD) fairness metric
+- Fairness threshold presentation in scorecards
+
+## Quickstart
+
+```bash
+pip install -e .
+```
+
+```bash
+pytest
+```
+
+```bash
+tat init
+tat run prompt --config config.yaml --prompt "Summarize the policy update."
+```
+
+```bash
+ollama serve
+ollama pull qwen2.5-coder:3b
+tat run simulate --config config.yaml --prompt "Summarize the policy update."
+```
+
+```bash
+tat demo
+```
+
+`tat demo` runs the full end-to-end toolkit workflow in one command: it initializes `config.yaml` if needed, executes evaluation, red-team, explainability, reporting, monitoring, documentation, and incident checks, then prints the generated scorecard path. Use `tat demo --open-scorecard` to open the HTML scorecard automatically.
+
+
+## Core Commands
+
+```bash
+# (Don't paste this comment in terminal)One-command end-to-end demo
+tat demo
+tat demo --open-scorecard
+
+# (Don't paste this comment in terminal)Primary end-to-end run
+tat run prompt --config config.yaml --prompt "Summarize policy controls" --model-output "Stub answer"
+
+# (Don't paste this comment in terminal)Free local-model simulation run
+ollama serve
+ollama pull qwen2.5-coder:3b
+tat run simulate --config config.yaml --prompt "Summarize policy controls"
+
+# (Don't paste this comment in terminal)OpenAI-compatible hosted run if needed
+tat run simulate --config config.yaml --prompt "Summarize policy controls" \
+  --provider openai_compatible \
+  --endpoint https://api.openai.com/v1 \
+  --model gpt-4.1-mini \
+  --request-format responses
+
+# (Don't paste this comment in terminal)Individual workflows
+tat eval run --config config.yaml
+tat redteam run --config config.yaml
+tat xai reasoning-report --config config.yaml
+tat report --config config.yaml
+
+# (Don't paste this comment in terminal)Workstream D and Ops workflows
+tat docs build --config config.yaml
+tat monitor summarize --config config.yaml
+tat incident generate --config config.yaml
+```
+## Open Scorecard:
+```
+export RUN_ID=$(ls -1t artifacts | head -n 1)
+open artifacts/$RUN_ID/scorecard.html
+```
+## Evidence Pack Outputs
+
+Each run writes to `artifacts/<run_id>/` and includes:
+
+- Workstream A: `reasoning_report.md`, `reasoning_report.json`, `lineage_report.md`, `authoritative_data_index.json`
+- Workstream B: `eval_results.json`, `scorecard.md`, `scorecard.html`, `scorecard.json`
+- Workstream C: `redteam_findings.json`, `redteam_summary.json`, `monitoring_summary.json`, `incident_report.md` (when triggered)
+- Workstream D: `system_card.md`, `data_card.md`, `model_card.md`, `artifact_manifest.json`, `artifact_manifest.md`
+- Shared: `prompt_run.json`, `telemetry.jsonl`
+  
+## Red-Team & Monitoring Vertical Slice
+
+A configuration-driven red-team vertical slice has been implemented under:
+
+`tests/redteam/`
+
+This demonstrates deterministic adversarial validation, artifact persistence, and telemetry instrumentation.
+
+Example execution:
+
+```bash
+tat redteam run --config tests/redteam/configs/config_rt01.yaml
+tat redteam run --config tests/redteam/configs/config_rt03.yaml
+```
+
+## Notes
+
+- No external APIs are required for stubbed runs or local Ollama simulation runs.
+- `tat init` now bootstraps the adapter for a free local `Ollama` model by default.
+- `tat run simulate` routes across Ollama native generate, OpenAI Responses, and OpenAI-compatible chat completions APIs while keeping the rest of the toolkit in dry-run mode.
+- Golden suites include 50+ deterministic test cases across low, medium, and high tiers.
+- Red-team suite includes 20 deterministic security cases.
+- This repository is public-facing and designed to allow referenced inspiration patterns with explicit attribution.
+- Pytest disables its built-in `debugging` plugin by default because that plugin can crash under some Python 3.13 environments; for local troubleshooting, re-enable it explicitly with `pytest -p debugging`.

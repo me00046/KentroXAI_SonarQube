@@ -1,0 +1,19 @@
+{
+  "slice_id": "EV-03",
+  "suite": "high",
+  "overall_passed": false,
+  "metric_count": 9,
+  "passed_metrics": [
+    "fairness_equal_opportunity_difference",
+    "fairness_average_odds_difference"
+  ],
+  "failed_metrics": [
+    "accuracy_stub",
+    "reliability",
+    "fairness_demographic_parity_diff",
+    "fairness_disparate_impact_ratio",
+    "groundedness_stub",
+    "refusal_correctness",
+    "unanswerable_handling"
+  ]
+}

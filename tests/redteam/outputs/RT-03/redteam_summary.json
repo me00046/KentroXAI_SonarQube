@@ -1,0 +1,11 @@
+{
+  "severity": {
+    "low": 1,
+    "medium": 0,
+    "high": 0,
+    "critical": 0
+  },
+  "tags": {
+    "leakage": 1
+  }
+}

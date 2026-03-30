@@ -1,0 +1,13 @@
+{
+  "slice_id": "EV-01",
+  "suite": "low",
+  "overall_passed": true,
+  "metric_count": 4,
+  "passed_metrics": [
+    "accuracy_stub",
+    "reliability",
+    "refusal_correctness",
+    "unanswerable_handling"
+  ],
+  "failed_metrics": []
+}

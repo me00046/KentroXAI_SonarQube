@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NIST AI RMF Pipeline</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; margin: 0; background: #f6f8fb; color: #1b2230; }
+  .wrap { max-width: 1040px; margin: 28px auto; padding: 24px 28px; background: #fff; border: 1px solid #d9dee9; border-radius: 14px; }
+  h1 { font-size: 32px; margin: 0 0 14px; }
+  h2 { font-size: 22px; margin: 24px 0 10px; }
+  h3 { font-size: 18px; margin: 18px 0 8px; }
+  p { margin: 8px 0; line-height: 1.5; }
+  ul, ol { margin: 8px 0 12px 22px; line-height: 1.5; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 16px; font-size: 14px; }
+  th, td { border: 1px solid #d9dee9; padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #eef2f9; font-weight: 700; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Evaluation and Governance Pipeline (High-Level)</h1><h2>Purpose</h2><p>Provide a simple, repeatable pipeline for evaluating model trust and making governed release decisions, aligned to NIST AI RMF Measure and Manage.</p><h2>Pipeline Stages</h2><ol><li>**Input**</li></ol><p>Screen incoming requests and context for policy, quality, and safety readiness.</p><ol><li>**Model**</li></ol><p>Run the model through an approved adapter path with traceability enabled.</p><ol><li>**Output**</li></ol><p>Assess response quality, safety, and explainability signals.</p><ol><li>**Scoring**</li></ol><p>Aggregate metrics, apply stage gates, and produce a trust decision.</p><h2>Governance Control Layers</h2><ul><li>**Policy &amp; Risk Controls**</li></ul><p>Define risk tier, approval requirements, and release constraints.</p><ul><li>**Evaluation Controls**</li></ul><p>Run quality, robustness, fairness, and reliability checks.</p><ul><li>**Security Controls**</li></ul><p>Run red-team tests and enforce escalation for high-severity findings.</p><ul><li>**Documentation Controls**</li></ul><p>Require evidence-pack completeness and audit-ready artifacts.</p><ul><li>**Operational Controls**</li></ul><p>Monitor runs, track incidents, and route remediation actions.</p><h2>Trust Signals (High Notes)</h2><ul><li>**Accuracy**: Is the model correct enough for intended use?</li><li>**Reliability**: Is behavior consistent across runs/cases?</li><li>**Robustness**: Does it resist adversarial and ambiguous inputs?</li><li>**Fairness**: Are group-level disparities within accepted bounds?</li><li>**Safety Signals**: Refusal correctness and unanswerable handling.</li><li>**Evidence Completeness**: Are required artifacts present for review?</li></ul><h2>Decision Model</h2><ul><li>Stage gates produce `pass`, `needs_review`, or `fail`.</li><li>Any blocking failure leads to **No-Go**.</li><li>Any unresolved review item leads to **No-Go pending human sign-off**.</li><li>Only fully passing gates produce **Go**.</li></ul><h2>NIST AI RMF Alignment</h2><h3>Measure</h3><ul><li>Define and run structured evaluations.</li><li>Quantify trust signals and risk indicators.</li><li>Capture evidence to support transparency and traceability.</li></ul><h3>Manage</h3><ul><li>Apply gate-based risk responses.</li><li>Enforce remediation before release.</li><li>Maintain operational monitoring and incident workflows.</li></ul><h2>Outcome</h2><p>A practical governance loop: evaluate -&gt; decide -&gt; document -&gt; monitor -&gt; improve, without requiring a production environment for initial development.</p>
+  </div>
+</body>
+</html>

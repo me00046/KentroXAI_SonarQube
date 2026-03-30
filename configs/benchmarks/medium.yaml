@@ -1,0 +1,47 @@
+project_name: sample-trusted-ai-project
+risk_tier: medium
+output_dir: artifacts
+system:
+  created_at: "2026-03-04T16:17:35Z"
+  system_id: sample-trusted-ai-system-medium
+  system_name: Sample Trusted AI System Medium
+  version: 1.0.0
+  model_provider: OpenAI
+  model_name: sample-classifier
+  model_version: "2026-03-01"
+  environment: staging
+  risk_level: medium
+  compliance_profile: internal
+  telemetry_level: standard
+  deployment_region: us-east-1
+  owner: responsible-ai-team
+  metadata:
+    intended_use: Medium-risk benchmark scenario
+    limitations: Synthetic records for demonstration
+    change_ticket: DEMO-MED-001
+    data_classification: internal
+data:
+  dataset_name: sample_customer_data_medium
+  source: local_csv
+  sensitive_features:
+    - gender
+    - age_bucket
+model:
+  model_name: sample_classifier
+  version: 0.1.0
+  owner: responsible-ai-team
+  task: question_answering
+  intended_use: Medium-risk governance benchmark
+  limitations: Not production-grade
+  known_failures:
+    - Edge cases may be unstable
+eval:
+  suites:
+    - medium
+  benchmark_registry_path: benchmarks/metric_registry_hq.json
+adapters:
+  provider: ollama
+  endpoint: http://localhost:11434
+  model: qwen2.5-coder:3b
+  request_format: ollama_generate
+  timeout_seconds: 60

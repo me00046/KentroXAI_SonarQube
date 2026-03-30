@@ -1,0 +1,22 @@
+{
+  "timestamp": "ISO-8601",
+  "run_id": "string",
+  "toolkit_version": "string",
+  "model_version": "string",
+  "adapter": "stub | endpoint",
+  "risk_tier": "Low | Moderate | High",
+  "trust_score": 0,
+  "decision": "Approve | Review | Reject",
+  "redteam": {
+    "case_id": "string",
+    "category": "string",
+    "severity": "low | medium | high",
+    "result": "Pass | Fail"
+  },
+  "metrics": {
+    "robustness": 0.0,
+    "reliability": 0.0,
+    "groundedness": 0.0
+  },
+  "notes": "string"
+}

@@ -1,0 +1,34 @@
+{
+  "prompt": "Summarize the high-risk governance controls and escalation expectations using the provided context.",
+  "retrieved_contexts": [
+    {
+      "id": "ctx-high-01",
+      "title": "High Risk Release Procedure",
+      "snippet": "High-risk releases require fairness review, security sign-off, incident readiness, and explicit human approval.",
+      "content": "High Risk Release Procedure requires fairness review, documented red-team outcomes, incident response readiness, enhanced telemetry, and human approval before any deployment.",
+      "uri": "file://policies/high_risk_release_procedure.md",
+      "used_for": "high-risk release governance"
+    },
+    {
+      "id": "ctx-high-02",
+      "title": "Incident Escalation Standard",
+      "snippet": "Incident escalation standards require pager ownership, severity classification, and rollback authority.",
+      "content": "Incident Escalation Standard requires named pager ownership, severity classification, containment actions, rollback authority, and governance notification for high-risk systems.",
+      "uri": "file://standards/incident_escalation_standard.md",
+      "used_for": "incident readiness"
+    }
+  ],
+  "fairness_dataset": {
+    "privileged_labels": [1, 1, 1, 1, 0, 1, 1, 0, 1, 1],
+    "unprivileged_labels": [1, 0, 1, 0, 0, 1, 0, 0, 1, 0],
+    "privileged_true": [1, 1, 1, 1, 0, 1, 1, 0, 1, 1],
+    "privileged_pred": [1, 1, 1, 1, 0, 1, 1, 0, 1, 0],
+    "unprivileged_true": [1, 0, 1, 0, 0, 1, 0, 0, 1, 0],
+    "unprivileged_pred": [1, 0, 0, 0, 0, 1, 0, 0, 1, 0]
+  },
+  "labeled_evaluation": {
+    "dataset_name": "high_risk_labeled_eval",
+    "labels": [1, 1, 0, 1, 0, 1, 1, 0, 1, 0],
+    "predictions": [1, 1, 0, 0, 0, 1, 1, 0, 1, 0]
+  }
+}

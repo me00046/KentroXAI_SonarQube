@@ -1,0 +1,34 @@
+{
+  "prompt": "Summarize the medium-risk governance controls using the provided context.",
+  "retrieved_contexts": [
+    {
+      "id": "ctx-med-01",
+      "title": "Model Release Policy 4.2",
+      "snippet": "Policy controls require documented evaluation, red-team review, traceable evidence, and explicit deployment approval before release.",
+      "content": "Model Release Policy 4.2 states that policy controls must include documented evaluation thresholds, red-team completion, artifact completeness checks, and human approval before deployment.",
+      "uri": "file://policies/model_release_policy_4_2.md",
+      "used_for": "deployment gate grounding"
+    },
+    {
+      "id": "ctx-med-02",
+      "title": "Telemetry Retention Standard",
+      "snippet": "Telemetry controls require event logging, artifact lineage, and retention for governance review.",
+      "content": "Telemetry Retention Standard requires logging of metric computations, model invocations, artifact writes, and lineage metadata so governance teams can audit the run after execution.",
+      "uri": "file://standards/telemetry_retention_standard.md",
+      "used_for": "monitoring evidence"
+    }
+  ],
+  "fairness_dataset": {
+    "privileged_labels": [1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0],
+    "unprivileged_labels": [1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0],
+    "privileged_true": [1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0],
+    "privileged_pred": [1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0],
+    "unprivileged_true": [1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0],
+    "unprivileged_pred": [1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0]
+  },
+  "labeled_evaluation": {
+    "dataset_name": "medium_risk_labeled_eval",
+    "labels": [1, 1, 0, 1, 0, 1, 1, 0],
+    "predictions": [1, 1, 0, 1, 0, 0, 1, 0]
+  }
+}

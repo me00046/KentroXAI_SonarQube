@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "evaluation_summary",
+  "type": "object",
+  "required": ["slice_id", "suite", "overall_passed", "metric_count", "passed_metrics", "failed_metrics"],
+  "properties": {
+    "slice_id": { "type": "string" },
+    "suite": { "type": "string" },
+    "overall_passed": { "type": "boolean" },
+    "metric_count": { "type": "integer", "minimum": 0 },
+    "passed_metrics": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "failed_metrics": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}
